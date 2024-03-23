@@ -53,7 +53,7 @@ export const scrapSubstitutions = async () => {
   $('tbody')
     .children()
     .each((_, el) => {
-      if ($(el).find('.st1').length) {
+      if ($(el).find('.st1').length == 1) {
         if (absentTeacher) {
           teacherSubstitutions.push({ absentTeacher, substitutions });
           absentTeacher = '';
@@ -63,13 +63,59 @@ export const scrapSubstitutions = async () => {
       } else if ($(el).find('.st7').length) {
         const lessonNumber = cleanString($(el).find('.st7').text());
         const description = cleanString($(el).find('.st8').text());
-        const [className, whatAndClassRoom] = description.split(' - ');
-        const [what, classroom] = whatAndClassRoom.split(', ');
-        const newTeacher = cleanString($(el).find('.st8').next().text());
+        const [className, whatClassRoomAndTeacher] = description.split(' - ');
+        const [what, classroomAndTeacher] = whatClassRoomAndTeacher.split(', ');
+        const [classroom, newTeacher, newTeacherSurname] = classroomAndTeacher
+          ? classroomAndTeacher.split(' ')
+          : ['', ''];
         const specialNote = cleanString($(el).find('.st9').text());
-        substitutions.push({ lessonNumber, className, what, classroom, newTeacher, specialNote });
+        substitutions.push({
+          lessonNumber,
+          className,
+          what,
+          classroom,
+          newTeacher: newTeacher ? newTeacher + ' ' + newTeacherSurname : '',
+          specialNote,
+        });
+      } else if ($(el).find('.st10').length) {
+        const lessonNumber = cleanString($(el).find('.st10').text());
+        const description = cleanString($(el).find('.st11').text());
+        const [className, whatClassRoomAndTeacher] = description.split(' - ');
+        const [what, classroomAndTeacher] = whatClassRoomAndTeacher.split(', ');
+        const [classroom, newTeacher, newTeacherSurname] = classroomAndTeacher
+          ? classroomAndTeacher.split(' ')
+          : ['', ''];
+        const specialNote = cleanString($(el).find('.st12').text());
+        substitutions.push({
+          lessonNumber,
+          className,
+          what,
+          classroom,
+          newTeacher: newTeacher ? newTeacher + ' ' + newTeacherSurname : '',
+          specialNote,
+        });
+      } else if ($(el).find('.st14').length) {
+        const lessonNumber = cleanString($(el).find('.st4').text());
+        const description = cleanString($(el).find('.st13').text());
+        const [className, whatClassRoomAndTeacher] = description.split(' - ');
+        const [what, classroomAndTeacher] = whatClassRoomAndTeacher.split(', ');
+        const [classroom, newTeacher, newTeacherSurname] = classroomAndTeacher
+          ? classroomAndTeacher.split(' ')
+          : ['', ''];
+        const specialNote = cleanString($(el).find('.st14').text());
+        substitutions.push({
+          lessonNumber,
+          className,
+          what,
+          classroom,
+          newTeacher: newTeacher ? newTeacher + ' ' + newTeacherSurname : '',
+          specialNote,
+        });
       }
     });
+  if (absentTeacher) {
+    teacherSubstitutions.push({ absentTeacher, substitutions });
+  }
   return {
     date,
     substitutions: teacherSubstitutions,
