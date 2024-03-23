@@ -14,39 +14,6 @@ export const scrapSubstitutions = async () => {
   const $ = cheerio.load(html);
   const date = cleanString($('.st0').text().split(' ').slice(3).join(' '));
 
-  // information about absent teachers and substitutions for their classes are all in one big tbody, so we need to iterate over each, but first, row
-  // the data has a structure like this:
-  //<tr>
-  // <td nowrap="" class="st1" colspan="4" align="LEFT" bgcolor="#FFDFBF">
-  //  absent teacher
-  // </td>
-  // </tr>
-  // <tr>
-  // td with useless classes: st4, st5, st6
-  // </tr>
-  //<tr>
-  // <td nowrap="" class="st7" align="LEFT">
-  // lesson number
-  // </td>
-  // <td nowrap="" class="st8" align="LEFT">
-  // religia 5pta5ptb - Uczniowie przychodzą później
-  // </td>
-  // <td nowrap="" class="st8" align="LEFT">
-  // &nbsp;
-  // </td>
-  // <td nowrap="" class="st9" align="LEFT">
-  // &nbsp;
-  // </td>
-  // </tr>
-  // there is multiple rows with classes, so we need to iterate over them
-  // class st1 - absent teacher
-  // row with useless classes: st4, st5, st6
-  // multiple rows with classes:
-  // st7 - lesson number;
-  // st8 - class, what and classroom (in format [class] - [what], [classroom (if exists)]);
-  // st8 - new teacher (if exists);
-  // st9 - special note (if exists);
-  // data that doesnt exist has &nbsp; as a value
   const teacherSubstitutions: TeacherSubstitution[] = [];
   let absentTeacher = '';
   let substitutions: Substitution[] = [];
