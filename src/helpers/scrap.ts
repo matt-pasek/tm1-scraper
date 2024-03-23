@@ -43,10 +43,9 @@ export const scrapSubstitutions = async () => {
         description = cleanString($(el).find('.st13').text());
         specialNote = cleanString($(el).find('.st14').text());
       }
+      if (!lessonNumber) return;
       const [className, whatClassRoomAndTeacher] = description.split(' - ');
-      const [what, classroomAndTeacher] = whatClassRoomAndTeacher
-        ? whatClassRoomAndTeacher.split(', ')
-        : ['', ''];
+      const [what, classroomAndTeacher] = whatClassRoomAndTeacher.split(', ');
       const [classroom, newTeacher, newTeacherSurname] = classroomAndTeacher
         ? classroomAndTeacher.split(' ')
         : ['', ''];
