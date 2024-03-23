@@ -1,7 +1,7 @@
 import cheerio from 'cheerio';
 import iconv from 'iconv-lite';
 
-import { Substitution, TeacherSubstitution } from '../model/substitution';
+import { AllSubstitutions, Substitution, TeacherSubstitution } from '../model/substitution';
 import { cleanString } from './cleanup';
 
 const fetchWithEncoding = async (url: string, encoding: string) => {
@@ -13,10 +13,32 @@ export const scrapSubstitutions = async () => {
   const html = await fetchWithEncoding('https://zastepstwa.staff.edu.pl/', 'iso-8859-2');
   const $ = cheerio.load(html);
   const date = cleanString($('.st0').text().split(' ').slice(3).join(' '));
-  console.log(date);
 
   // information about absent teachers and substitutions for their classes are all in one big tbody, so we need to iterate over each, but first, row
   // the data has a structure like this:
+  //<tr>
+  // <td nowrap="" class="st1" colspan="4" align="LEFT" bgcolor="#FFDFBF">
+  //  absent teacher
+  // </td>
+  // </tr>
+  // <tr>
+  // td with useless classes: st4, st5, st6
+  // </tr>
+  //<tr>
+  // <td nowrap="" class="st7" align="LEFT">
+  // lesson number
+  // </td>
+  // <td nowrap="" class="st8" align="LEFT">
+  // religia 5pta5ptb - Uczniowie przychodzą później
+  // </td>
+  // <td nowrap="" class="st8" align="LEFT">
+  // &nbsp;
+  // </td>
+  // <td nowrap="" class="st9" align="LEFT">
+  // &nbsp;
+  // </td>
+  // </tr>
+  // there is multiple rows with classes, so we need to iterate over them
   // class st1 - absent teacher
   // row with useless classes: st4, st5, st6
   // multiple rows with classes:
@@ -25,33 +47,31 @@ export const scrapSubstitutions = async () => {
   // st8 - new teacher (if exists);
   // st9 - special note (if exists);
   // data that doesnt exist has &nbsp; as a value
-
   const teacherSubstitutions: TeacherSubstitution[] = [];
-  let absentTeacher: string;
+  let absentTeacher = '';
   let substitutions: Substitution[] = [];
-  $('.st1').each((i, el) => {
-    if (absentTeacher) {
-      teacherSubstitutions.push({ date, absentTeacher, substitutions });
-      substitutions = [];
-    }
-    absentTeacher = $(el).text().replace(/\n/g, '');
-    $(el)
-      .nextUntil('.st1')
-      .each((i, el) => {
-        if ($(el).hasClass('st7')) {
-          const descriptionRow = $(el).next().text().split(' - ');
-          const newTeacher = $(el).next().next().text();
-          const specialNote = $(el).next().next().next().text();
-          substitutions.push({
-            lessonNumber: parseInt($(el).text().split(' ')[1]),
-            class: descriptionRow[0],
-            what: descriptionRow[1].split(', ')[0],
-            classroom: descriptionRow[1].split(', ')[1],
-            newTeacher: newTeacher === '\u00A0' ? undefined : newTeacher,
-            specialNote: specialNote === '\u00A0' ? undefined : specialNote,
-          });
+  $('tbody')
+    .children()
+    .each((_, el) => {
+      if ($(el).find('.st1').length) {
+        if (absentTeacher) {
+          teacherSubstitutions.push({ absentTeacher, substitutions });
+          absentTeacher = '';
+          substitutions = [];
         }
-      });
-  });
-  return teacherSubstitutions;
+        absentTeacher = cleanString($(el).find('.st1').text());
+      } else if ($(el).find('.st7').length) {
+        const lessonNumber = cleanString($(el).find('.st7').text());
+        const description = cleanString($(el).find('.st8').text());
+        const [className, whatAndClassRoom] = description.split(' - ');
+        const [what, classroom] = whatAndClassRoom.split(', ');
+        const newTeacher = cleanString($(el).find('.st8').next().text());
+        const specialNote = cleanString($(el).find('.st9').text());
+        substitutions.push({ lessonNumber, className, what, classroom, newTeacher, specialNote });
+      }
+    });
+  return {
+    date,
+    substitutions: teacherSubstitutions,
+  } as AllSubstitutions;
 };
