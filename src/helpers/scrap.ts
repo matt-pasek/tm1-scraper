@@ -3,7 +3,7 @@ import iconv from 'iconv-lite';
 
 import { AllSubstitutions, Substitution, TeacherSubstitution } from '../model/substitution';
 import { cleanString } from './cleanup';
-import { Lesson, LessonDay, Schedule } from '../model/schedule.model';
+import { Lesson, Schedule } from '../model/schedule.model';
 
 const fetchWithEncoding = async (url: string, encoding: string) => {
   const res = await fetch(url);
@@ -77,18 +77,40 @@ export const scrapSubstitutions = async () => {
 };
 
 export const scrapSchedules = async () => {
-  await scrapSchedule('o1');
-  return [];
+  const schedules = [];
+  for (let i = 1; ; i++) {
+    console.log(i);
+    const schedule = await scrapSchedule('o' + i.toString());
+    if (schedule.className === '') {
+      return schedules;
+    }
+    schedules.push(schedule);
+  }
 };
 
 const scrapSchedule = async (end: string) => {
+  const concatenateTextWithSeparator = (elements: cheerio.Cheerio, separator: string) => {
+    return elements
+      .map(function (this: cheerio.Element) {
+        return $(this).text();
+      })
+      .get()
+      .join(separator);
+  };
   const html = await fetchWithEncoding(
-    `https://zastepstwa.staff.edu.pl/plany/${end}.html`,
-    'iso-8859-2',
+    `https://planlekcji.staff.edu.pl/plany/${end}.html`,
+    'utf-8',
   );
   const $ = cheerio.load(html);
   const className = cleanString($('.tytulnapis').text());
-
+  console.log(className);
+  const days = {
+    1: [] as Lesson[],
+    2: [] as Lesson[],
+    3: [] as Lesson[],
+    4: [] as Lesson[],
+    5: [] as Lesson[],
+  };
   $('table.tabela')
     .find('tbody')
     .children()
@@ -96,6 +118,21 @@ const scrapSchedule = async (end: string) => {
       if ($(el).find('.nr').length) {
         const children = $(el).children();
         const lessonNumber = cleanString($(children[0]).text());
+        console.log('len: ' + children.length);
+        console.log('less: ' + lessonNumber);
+        for (let i = 2; i < children.length; i++) {
+          const lesson = $(children[i]);
+          if (!lesson.text().trim()) continue;
+          const name = concatenateTextWithSeparator(lesson.find('.p'), '&');
+          const teacher = concatenateTextWithSeparator(lesson.find('.n'), '&');
+          const room = concatenateTextWithSeparator(lesson.find('.s'), '&');
+          days[(i - 1) as 1 | 2 | 3 | 4 | 5].push({ name, teacher, room, lessonNumber });
+        }
       }
     });
+  const lessons = Object.entries(days).map(([weekDay, schedule]) => ({
+    weekDay: parseInt(weekDay),
+    schedule,
+  }));
+  return { className, lessons } as Schedule;
 };
