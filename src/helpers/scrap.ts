@@ -74,3 +74,18 @@ export const scrapSubstitutions = async () => {
     substitutions: teacherSubstitutions,
   } as AllSubstitutions;
 };
+
+export const scrapSchedules = async () => {
+  await scrapSchedule('o1');
+  return [];
+};
+
+const scrapSchedule = async (end: string) => {
+  const html = await fetchWithEncoding(
+    `https://zastepstwa.staff.edu.pl/plany/${end}.html`,
+    'iso-8859-2',
+  );
+  const $ = cheerio.load(html);
+  const tbody = $('tbody.tabela');
+  console.log(tbody);
+};
