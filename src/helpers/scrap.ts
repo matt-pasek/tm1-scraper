@@ -22,6 +22,7 @@ export const scrapSubstitutions = async () => {
     .each((_, el) => {
       let lessonNumber = '';
       let description = '';
+      let newTeacher = '';
       let specialNote = '';
       if ($(el).find('.st1').length == 1) {
         if (absentTeacher) {
@@ -30,32 +31,39 @@ export const scrapSubstitutions = async () => {
           substitutions = [];
         }
         absentTeacher = cleanString($(el).find('.st1').text());
-      } else if ($(el).find('.st7').length) {
-        lessonNumber = cleanString($(el).find('.st7').text());
-        description = cleanString($(el).find('.st8').text());
-        specialNote = cleanString($(el).find('.st9').text());
-      } else if ($(el).find('.st10').length) {
-        lessonNumber = cleanString($(el).find('.st10').text());
-        description = cleanString($(el).find('.st11').text());
-        specialNote = cleanString($(el).find('.st12').text());
-      } else if ($(el).find('.st14').length) {
-        lessonNumber = cleanString($(el).find('.st4').text());
-        description = cleanString($(el).find('.st13').text());
-        specialNote = cleanString($(el).find('.st14').text());
+      } else if (
+        $(el).find('.st7').length ||
+        $(el).find('.st10').length ||
+        $(el).find('.st14').length
+      ) {
+        const children = $(el).children();
+        lessonNumber = cleanString($(children[0]).text());
+        description = cleanString($(children[1]).text());
+        newTeacher = cleanString($(children[2]).text());
+        specialNote = cleanString($(children[3]).text());
       }
       if (!lessonNumber) return;
-      const [className, whatClassRoomAndTeacher] = description.split(' - ');
-      const [what, classroomAndTeacher] = whatClassRoomAndTeacher.split(', ');
-      const [classroom, newTeacher, newTeacherSurname] = classroomAndTeacher
-        ? classroomAndTeacher.split(' ')
-        : ['', ''];
+      const [className, whatAndClassRoom] = description.split(' - ', 2);
+      let what: string;
+      let classroom = '';
+      if (!whatAndClassRoom.includes(', ')) {
+        what = whatAndClassRoom;
+      } else {
+        const splitWhatAndClassRoom = whatAndClassRoom.split(', ');
+        classroom = splitWhatAndClassRoom.pop() as string;
+        what = splitWhatAndClassRoom.join(', ');
+      }
+
       substitutions.push({
         lessonNumber,
         className,
-        what,
+        what:
+          what.includes('Uczniowie') || what.includes('konsekwencji') || what.includes('Czytelnia')
+            ? 'Odwołane'
+            : what,
         classroom,
-        newTeacher: newTeacher ? newTeacher + ' ' + newTeacherSurname : '',
-        specialNote,
+        newTeacher: newTeacher,
+        specialNote: specialNote,
       });
     });
   if (absentTeacher) {
