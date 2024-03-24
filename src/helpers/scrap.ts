@@ -3,6 +3,7 @@ import iconv from 'iconv-lite';
 
 import { AllSubstitutions, Substitution, TeacherSubstitution } from '../model/substitution';
 import { cleanString } from './cleanup';
+import { Lesson, LessonDay, Schedule } from '../model/schedule.model';
 
 const fetchWithEncoding = async (url: string, encoding: string) => {
   const res = await fetch(url);
@@ -86,6 +87,15 @@ const scrapSchedule = async (end: string) => {
     'iso-8859-2',
   );
   const $ = cheerio.load(html);
-  const tbody = $('tbody.tabela');
-  console.log(tbody);
+  const className = cleanString($('.tytulnapis').text());
+
+  $('table.tabela')
+    .find('tbody')
+    .children()
+    .each((_, el) => {
+      if ($(el).find('.nr').length) {
+        const children = $(el).children();
+        const lessonNumber = cleanString($(children[0]).text());
+      }
+    });
 };

@@ -1,9 +1,9 @@
 export interface Schedule {
   className: string;
-  lessons: Day[];
+  lessons: LessonDay[];
 }
 
-export interface Day {
+export interface LessonDay {
   weekDay: number;
   schedule: Lesson[];
 }
