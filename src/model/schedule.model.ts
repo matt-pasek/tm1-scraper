@@ -4,7 +4,7 @@ export interface Schedule {
 }
 
 export interface Day {
-  weekDay: string;
+  weekDay: number;
   schedule: Lesson[];
 }
 
